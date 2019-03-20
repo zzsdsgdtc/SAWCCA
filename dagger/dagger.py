@@ -185,7 +185,7 @@ class DaggerLeader(object):
 
         summary = True if self.train_step % 10 == 0 else False
 
-        ops_to_run = [self.x:, self.total_loss]
+        ops_to_run = [self.train_op, self.total_loss]
 
         if summary:
             ops_to_run.append(self.summary_op)
