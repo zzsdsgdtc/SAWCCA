@@ -67,7 +67,7 @@ class DaggerLSTM(object):
             a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
             s = tf.reduce_sum(a * output[:, start : end, :], [1])
  
-            l = tf.concat([l, [s]], 0)
+            attn_vec = tf.concat([attn_vec, [s]], 0)
             return i + 1, dim, attn_vec
 
         _, _, self.attn_vec = tf.while_loop(lambda i, dim, attn_vec: i < dim, 
