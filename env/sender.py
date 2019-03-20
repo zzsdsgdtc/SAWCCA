@@ -75,7 +75,6 @@ class Sender(object):
         self.cwnd = 10.0
         self.step_len_ms = 10
         self.decision_window = [] # store states up to dwnd
-        self.dwnd = dwnd
 
         # state variables for RLCC
         self.delivered_time = 0
@@ -122,7 +121,7 @@ class Sender(object):
 
     def update_decision_window(self, state):
         self.decision_window.append(state)
-        if len(self.decision_window) > self.dwnd:
+        if len(self.decision_window) > Sender.dwnd:
             self.decision_window = self.decision_window[1:]
 
     def update_state(self, ack):
