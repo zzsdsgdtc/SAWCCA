@@ -17,23 +17,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import layers, rnn
 
-
-class DaggerNetwork(object):
-    def __init__(self, state_dim, action_cnt):
-        self.states = tf.placeholder(tf.float32, [None, state_dim])
-
-        actor_h1 = layers.relu(self.states, 8)
-        actor_h2 = layers.relu(actor_h1, 8)
-        self.action_scores = layers.linear(actor_h2, action_cnt)
-        self.action_probs = tf.nn.softmax(self.action_scores,
-                                          name='action_probs')
-
-        self.trainable_vars = tf.get_collection(
-            tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
-
-
 class DaggerLSTM(object):
-    def __init__(self, state_dim, action_cnt):
+    def __init__(self, state_dim, dwnd):
         # dummy variable used to verify that sharing variables is working
         self.cnt = tf.get_variable(
             'cnt', [], tf.float32,
@@ -45,6 +30,8 @@ class DaggerLSTM(object):
 
         self.num_layers = 1
         self.lstm_dim = 32
+        self.linear_dim = 16
+        self.attn_dim = 32
         stacked_lstm = rnn.MultiRNNCell([rnn.BasicLSTMCell(self.lstm_dim)
             for _ in xrange(self.num_layers)])
 
@@ -60,14 +47,31 @@ class DaggerLSTM(object):
         state_tuple_in = tuple(state_tuple_in)
 
         # self.output: [batch_size, max_time, lstm_dim]
+        state_embedding = layers.linear(self.input, self.linear_dim)
         output, state_tuple_out = tf.nn.dynamic_rnn(
-            stacked_lstm, self.input, initial_state=state_tuple_in)
+            stacked_lstm, state_embedding, initial_state=state_tuple_in)
 
         self.state_out = self.convert_state_out(state_tuple_out)
 
         # map output to scores
-        self.action_scores = layers.linear(output, action_cnt)
-        self.action_probs = tf.nn.softmax(self.action_scores)
+        u = layers.linear(output, self.attn_dim)
+        u = tf.nn.tanh(u) # batch_size * max_time * attn_dim
+
+        v = tf.get_variable('attn_v', [attn_dim])
+        y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
+
+        self.action_scores = output[:, 0, :]
+        for i in range(1, output.shape[1]):
+            start = max(0, i - dwnd + 1)
+            end = i + 1
+            a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
+            s = tf.reduce_sum(a * output[:, start : end, :], [1])
+            s = tf.expand_dims(s, 1)
+            self.action_scores = tf.concat([self.action_scores, s], 1)
+        # self.action_scores is still batch_size * max_time * lstm_dim
+
+        self.actions = tf.nn.tanh(layers.linear(self.action_scores, 1))
+        self.actions = tf.squeeze(self.actions)  # batch_size * max_time
 
         self.trainable_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)

@@ -52,19 +52,19 @@ class DaggerLeader(object):
         self.train_step = 0
 
         self.state_dim = Sender.state_dim
-        self.action_cnt = Sender.action_cnt
-        self.aug_state_dim = self.state_dim + self.action_cnt
+        # self.action_cnt = Sender.action_cnt
+        self.aug_state_dim = self.state_dim + 1 #self.action_cnt
 
         # Create the master network and training/sync queues
         with tf.variable_scope('global'):
             self.global_network = DaggerLSTM(
-                state_dim=self.aug_state_dim, action_cnt=self.action_cnt)
+                state_dim=self.aug_state_dim, dwnd=Sender.dwnd)
 
         self.leader_device_cpu = '/job:ps/task:0/cpu:0'
         with tf.device(self.leader_device_cpu):
             with tf.variable_scope('global_cpu'):
                 self.global_network_cpu = DaggerLSTM(
-                    state_dim=self.aug_state_dim, action_cnt=self.action_cnt)
+                    state_dim=self.aug_state_dim, dwnd=Sender.dwnd)
 
         cpu_vars = self.global_network_cpu.trainable_vars
         gpu_vars = self.global_network.trainable_vars
@@ -77,7 +77,7 @@ class DaggerLeader(object):
 
         # Each element is [[aug_state]], [action]
         self.train_q = tf.FIFOQueue(
-                self.num_workers, [tf.float32, tf.int32],
+                self.num_workers, [tf.float32, tf.float32],
                 shared_name='training_feed')
 
         # Keys: worker indices, values: Tensorflow messaging queues
@@ -117,7 +117,7 @@ class DaggerLeader(object):
         summary values, Tensorboard, and Session.
         """
 
-        self.actions = tf.placeholder(tf.int32, [None, None])
+        self.expert_actions = tf.placeholder(tf.float32, [None, None])
 
         reg_loss = 0.0
         for x in self.global_network.trainable_vars:
@@ -126,17 +126,16 @@ class DaggerLeader(object):
             reg_loss += tf.nn.l2_loss(x)
         reg_loss *= self.regularization_lambda
 
-        cross_entropy_loss = tf.reduce_mean(
-                tf.nn.sparse_softmax_cross_entropy_with_logits(
-                    labels=self.actions,
-                    logits=self.global_network.action_scores))
+        MSE = tf.losses.mean_squared_error(
+              labels = self.expert_actions,
+              predictions = self.global_network.actions)
 
-        self.total_loss = cross_entropy_loss + reg_loss
+        self.total_loss = MSE + reg_loss
 
         optimizer = tf.train.AdamOptimizer(self.learn_rate)
         self.train_op = optimizer.minimize(self.total_loss)
 
-        tf.summary.scalar('reduced_ce_loss', cross_entropy_loss)
+        tf.summary.scalar('MSE', MSE)
         tf.summary.scalar('reg_loss', reg_loss)
         tf.summary.scalar('total_loss', self.total_loss)
         self.summary_op = tf.summary.merge_all()
@@ -324,14 +323,14 @@ class DaggerWorker(object):
         self.state_buf = []
         self.action_buf = []
         self.state_dim = env.state_dim
-        self.action_cnt = env.action_cnt
+        # self.action_cnt = env.action_cnt
 
-        self.aug_state_dim = self.state_dim + self.action_cnt
-        self.prev_action = self.action_cnt - 1
+        self.aug_state_dim = self.state_dim + 1 #self.action_cnt
+        self.prev_action = 0
 
         self.expert = TrueDaggerExpert(env)
-        # Must call env.set_sample_action() before env.rollout()
-        env.set_sample_action(self.sample_action)
+        # Must call env.set_policy() before env.rollout()
+        env.set_policy(self.policy)
 
         # Set up Tensorflow for synchronization, training
         self.setup_tf_ops()
@@ -352,19 +351,19 @@ class DaggerWorker(object):
         with tf.device(self.leader_device):
             with tf.variable_scope('global_cpu'):
                 self.global_network_cpu = DaggerLSTM(
-                    state_dim=self.aug_state_dim, action_cnt=self.action_cnt)
+                    state_dim=self.aug_state_dim, dwnd=Sender.dwnd)
 
         with tf.device(self.worker_device):
             with tf.variable_scope('local'):
                 self.local_network = DaggerLSTM(
-                    state_dim=self.aug_state_dim, action_cnt=self.action_cnt)
+                    state_dim=self.aug_state_dim, dwnd=Sender.dwnd)
 
         self.init_state = self.local_network.zero_init_state(1)
         self.lstm_state = self.init_state
 
         # Build shared queues for training data and synchronization
         self.train_q = tf.FIFOQueue(
-                self.num_workers, [tf.float32, tf.int32],
+                self.num_workers, [tf.float32, tf.float32],
                 shared_name='training_feed')
 
         self.sync_q = tf.FIFOQueue(3, [tf.int16],
@@ -373,7 +372,7 @@ class DaggerWorker(object):
         # Training data is [[aug_state]], [action]
         self.state_data = tf.placeholder(
                 tf.float32, shape=(None, self.aug_state_dim))
-        self.action_data = tf.placeholder(tf.int32, shape=(None))
+        self.action_data = tf.placeholder(tf.float32, shape=(None))
         self.enqueue_train_op = self.train_q.enqueue(
                 [self.state_data, self.action_data])
 
@@ -383,21 +382,22 @@ class DaggerWorker(object):
         self.sync_op = tf.group(*[v1.assign(v2) for v1, v2 in zip(
             local_vars, global_vars)])
 
-    def sample_action(self, state):
+    def policy(self, state):
         """ Given a state buffer in the past step, returns an action
         to perform.
 
         Appends to the state/action buffers the state and the
         "correct" action to take according to the expert.
         """
-        cwnd = state[self.state_dim - 1]
-        expert_action = self.expert.sample_action(cwnd)
+        last_cwnd = state[self.state_dim - 1]
+        expert_action = self.expert.policy(last_cwnd)
 
-        # For decision-making, normalize.
-        norm_state = normalize(state)
+        # # For decision-making, normalize.
+        # norm_state = normalize(state)
 
-        one_hot_action = one_hot(self.prev_action, self.action_cnt)
-        aug_state = norm_state + one_hot_action
+        # one_hot_action = one_hot(self.prev_action, self.action_cnt)
+        aug_state = norm_state + self.prev_action
+        self.env.sender.update_decision_window(aug_state)
 
         # Fill in state_buf, action_buf
         self.state_buf.append(aug_state)
@@ -411,15 +411,14 @@ class DaggerWorker(object):
         # Get probability of each action from the local network.
         pi = self.local_network
         feed_dict = {
-            pi.input: [[aug_state]],
+            pi.input: [self.env.sender.decision_window],
             pi.state_in: self.lstm_state,
         }
-        ops_to_run = [pi.action_probs, pi.state_out]
-        action_probs, self.lstm_state = self.sess.run(ops_to_run, feed_dict)
+        ops_to_run = [pi.actions, pi.state_out]
+        actions, self.lstm_state = self.sess.run(ops_to_run, feed_dict)
 
         # Choose an action to take and update current LSTM state
-        # action = np.argmax(np.random.multinomial(1, action_probs[0][0] - 1e-5))
-        action = np.argmax(action_probs[0][0])
+        action = actions[0][-1]
         self.prev_action = action
 
         return action
@@ -428,7 +427,7 @@ class DaggerWorker(object):
         """ Start an episode/flow with an empty dataset/environment. """
         self.state_buf = []
         self.action_buf = []
-        self.prev_action = self.action_cnt - 1
+        self.prev_action = 0
         self.lstm_state = self.init_state
 
         self.env.reset()

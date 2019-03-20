@@ -40,10 +40,13 @@ def format_actions(action_list):
 
 class Sender(object):
     # RL exposed class/static variables
+    min_cwnd = 10
+    max_cwnd = 25000
     max_steps = 1000
     state_dim = 4
-    action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
-    action_cnt = len(action_mapping)
+    dwnd = 10
+    # action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
+    # action_cnt = len(action_mapping)
 
     def __init__(self, port=0, train=False, debug=False):
         self.train = train
@@ -71,6 +74,8 @@ class Sender(object):
         self.next_ack = 0
         self.cwnd = 10.0
         self.step_len_ms = 10
+        self.decision_window = [] # store states up to dwnd
+        self.dwnd = dwnd
 
         # state variables for RLCC
         self.delivered_time = 0
@@ -111,10 +116,14 @@ class Sender(object):
 
         self.sock.setblocking(0)  # non-blocking UDP socket
 
-    def set_sample_action(self, sample_action):
+    def set_policy(self, policy):
         """Set the policy. Must be called before run()."""
+        self.policy = policy
 
-        self.sample_action = sample_action
+    def update_decision_window(self, state):
+        self.decision_window.append(state)
+        if len(self.decision_window) > self.dwnd:
+            self.decision_window = self.decision_window[1:]
 
     def update_state(self, ack):
         """ Update the state variables listed in __init__() """
@@ -157,12 +166,17 @@ class Sender(object):
             self.send_rate_ewma = (
                 0.875 * self.send_rate_ewma + 0.125 * send_rate)
 
-    def take_action(self, action_idx):
-        old_cwnd = self.cwnd
-        op, val = self.action_mapping[action_idx]
+    # def take_action(self, action_idx):
+    #     old_cwnd = self.cwnd
+    #     op, val = self.action_mapping[action_idx]
 
-        self.cwnd = apply_op(op, self.cwnd, val)
-        self.cwnd = max(2.0, self.cwnd)
+    #     self.cwnd = apply_op(op, self.cwnd, val)
+    #     self.cwnd = max(2.0, self.cwnd)
+
+    def take_action(self, action):
+        self.cwnd = self.cwnd * (1 + action)
+        self.cwnd = max(Sender.min_cwnd, self.cwnd)
+        self.cwnd = min(Sender.max_cwnd, self.cwnd)
 
     def window_is_open(self):
         return self.seq_num - self.next_ack < self.cwnd
@@ -203,11 +217,13 @@ class Sender(object):
                      self.send_rate_ewma,
                      self.cwnd]
 
+            self.update_decision_window(state)
+
             # time how long it takes to get an action from the NN
             if self.debug:
                 start_sample = time.time()
 
-            action = self.sample_action(state)
+            action = self.policy(state)
 
             if self.debug:
                 self.sampling_file.write('%.2f ms\n' % ((time.time() - start_sample) * 1000))

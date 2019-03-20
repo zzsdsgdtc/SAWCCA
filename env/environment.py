@@ -27,16 +27,16 @@ class Environment(object):
     def __init__(self, mahimahi_cmd):
         self.mahimahi_cmd = mahimahi_cmd
         self.state_dim = Sender.state_dim
-        self.action_cnt = Sender.action_cnt
+        # self.action_cnt = Sender.action_cnt
 
         # variables below will be filled in during setup
         self.sender = None
         self.receiver = None
 
-    def set_sample_action(self, sample_action):
+    def set_policy(self, policy):
         """Set the sender's policy. Must be called before calling reset()."""
 
-        self.sample_action = sample_action
+        self.policy = policy
 
     def reset(self):
         """Must be called before running rollout()."""
@@ -48,7 +48,7 @@ class Environment(object):
         # start sender as an instance of Sender class
         sys.stderr.write('Starting sender...\n')
         self.sender = Sender(self.port, train=True)
-        self.sender.set_sample_action(self.sample_action)
+        self.sender.set_policy(self.policy)
 
         # start receiver in a subprocess
         sys.stderr.write('Starting receiver...\n')

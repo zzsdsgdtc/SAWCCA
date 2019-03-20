@@ -33,7 +33,7 @@ def run(args):
         procs = args[job_name + '_procs']
 
         for i in xrange(len(host_list)):
-            ssh_cmd = ['ssh', host_list[i]]
+            ssh_cmd = ['ssh', '-i', args['pem_dir'], host_list[i]]
 
             cmd = ['python', args['worker_src'],
                    '--ps-hosts', args['ps_hosts'],
@@ -63,7 +63,7 @@ def cleanup(args):
     pkill_script = path.join(args['rlcc_dir'], 'helpers', 'pkill.py')
 
     for host in host_set:
-        kill_cmd = ['ssh', host, 'python', pkill_script, args['rlcc_dir']]
+        kill_cmd = ['ssh', '-i' , args['pem_dir'], host, 'python', pkill_script, args['rlcc_dir']]
         sys.stderr.write('$ %s\n' % ' '.join(kill_cmd))
         call(kill_cmd)
 
@@ -85,7 +85,8 @@ def construct_args(prog_args):
     args['ps_list'] = prog_args.ps_hosts.split(',')
     args['worker_list'] = prog_args.worker_hosts.split(',')
     args['username'] = prog_args.username
-
+    args['pem_dir'] = prog_args.pem_dir
+    
     for i, host in enumerate(args['ps_list']):
         args['ps_list'][i] = args['username'] + '@' + host.split(':')[0]
 
@@ -112,6 +113,9 @@ def main():
     parser.add_argument(
         '--rlcc-dir', metavar='DIR', default='/home/ubuntu/RLCC',
         help='absolute path to RLCC/ (default: /home/ubuntu/RLCC)')
+    parser.add_argument(
+        '--pem-dir', metavar='DIR', default='/home/ubuntu/RLCC',
+        help='absolute path to pem file for AWS')
     prog_args = parser.parse_args()
     args = construct_args(prog_args)
 

@@ -48,7 +48,7 @@ class Learner(object):
         uninit_vars -= set(self.model.trainable_vars)
         self.sess.run(tf.variables_initializer(uninit_vars))
 
-    def sample_action(self, state):
+    def policy(self, state):
         norm_state = normalize(state)
 
         one_hot_action = one_hot(self.prev_action, self.action_cnt)
@@ -89,7 +89,7 @@ def main():
         action_cnt=Sender.action_cnt,
         restore_vars=model_path)
 
-    sender.set_sample_action(learner.sample_action)
+    sender.set_policy(learner.policy)
 
     try:
         sender.handshake()

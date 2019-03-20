@@ -17,23 +17,27 @@ from env.sender import Sender
 from helpers.helpers import apply_op
 
 
-def action_error(actions, idx, cwnd, target):
-    """ Returns the absolute difference between the target and an action
-    applied to the cwnd.
-    The action is [op, val] located at actions[idx].
+# def action_error(actions, idx, cwnd, target):
+#     """ Returns the absolute difference between the target and an action
+#     applied to the cwnd.
+#     The action is [op, val] located at actions[idx].
+#     """
+#     op = actions[idx][0]
+#     val = actions[idx][1]
+#     return abs(apply_op(op, cwnd, val) - target)
+
+
+# def get_best_action(actions, cwnd, target):
+#     """ Returns the best action by finding the action that leads to the
+#     closest resulting cwnd to target.
+#     """
+#     return min(actions,
+#                key=lambda idx: action_error(actions, idx, cwnd, target))
+
+def get_best_action(cwnd, target):
+    """ Returns the best action by finding the diff percentage btw cwnd and target.
     """
-    op = actions[idx][0]
-    val = actions[idx][1]
-    return abs(apply_op(op, cwnd, val) - target)
-
-
-def get_best_action(actions, cwnd, target):
-    """ Returns the best action by finding the action that leads to the
-    closest resulting cwnd to target.
-    """
-    return min(actions,
-               key=lambda idx: action_error(actions, idx, cwnd, target))
-
+    return (target - cwnd) * 1.0 / cwnd
 
 class NaiveDaggerExpert(object):
     """ Naive modified LEDBAT implementation """
@@ -65,8 +69,8 @@ class TrueDaggerExpert(object):
                                            'the environment in worker.py.')
         self.best_cwnd = env.best_cwnd
 
-    def sample_action(self, cwnd):
+    def policy(self, cwnd):
         # Gets the action that gives the resulting cwnd closest to the
         # best cwnd.
-        action = get_best_action(Sender.action_mapping, cwnd, self.best_cwnd)
+        action = get_best_action(cwnd, self.best_cwnd)
         return action
