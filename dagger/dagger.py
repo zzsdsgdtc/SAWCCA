@@ -397,7 +397,7 @@ class DaggerWorker(object):
 
         # one_hot_action = one_hot(self.prev_action, self.action_cnt)
         aug_state = state + [self.prev_action]
-        print("-----------in policy(), aug state is :" + str(aug_state) + "--------------")
+        # print("-----------in policy(), aug state is :" + str(aug_state) + "--------------")
         self.env.sender.update_decision_window(aug_state)
 
         # Fill in state_buf, action_buf
@@ -461,9 +461,9 @@ class DaggerWorker(object):
                     (self.task_idx, self.curr_ep, queue_size))
 
             # Enqueue a sequence of data into the training queue.
-            print('---------------len state buf' + str(len(self.state_buf)))
-            print('---------------state buf 0' + str((self.state_buf)[0]))
-            print('---------------len action buf' + str(len(self.action_buf)))
+            # print('---------------len state buf' + str(len(self.state_buf)))
+            # print('---------------state buf 0' + str((self.state_buf)[0]))
+            # print('---------------len action buf' + str(len(self.action_buf)))
             # print('---------------' + str(len(self.action_buf[0])))
             self.sess.run(self.enqueue_train_op, feed_dict={
                 self.state_data: self.state_buf,
