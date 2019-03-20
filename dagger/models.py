@@ -57,7 +57,7 @@ class DaggerLSTM(object):
         u = layers.linear(output, self.attn_dim)
         u = tf.nn.tanh(u) # batch_size * max_time * attn_dim
 
-        v = tf.get_variable('attn_v', [attn_dim])
+        v = tf.get_variable('attn_v', [self.attn_dim])
         y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
         self.action_scores = output[:, 0, :]
