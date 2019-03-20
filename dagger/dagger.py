@@ -389,7 +389,6 @@ class DaggerWorker(object):
         Appends to the state/action buffers the state and the
         "correct" action to take according to the expert.
         """
-        print("-----------in policy(), state is :" + str(state) + "--------------")
         last_cwnd = state[self.state_dim - 1]
         expert_action = self.expert.policy(last_cwnd)
         # print('------------' + str(expert_action) + '----------------')
@@ -398,6 +397,7 @@ class DaggerWorker(object):
 
         # one_hot_action = one_hot(self.prev_action, self.action_cnt)
         aug_state = state.append(self.prev_action)
+        print("-----------in policy(), aug state is :" + str(aug_state) + "--------------")
         self.env.sender.update_decision_window(aug_state)
 
         # Fill in state_buf, action_buf
