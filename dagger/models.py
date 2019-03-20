@@ -63,7 +63,9 @@ class DaggerLSTM(object):
         self.action_scores = output[:, 0, :]
 
         def loop_body(i, dim):
-            start = max(0, i - dwnd + 1)
+            start = i - dwnd + 1
+            if start < 0:
+                start = 0
             end = i + 1
             a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
             s = tf.reduce_sum(a * output[:, start : end, :], [1])
