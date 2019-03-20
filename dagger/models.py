@@ -61,7 +61,7 @@ class DaggerLSTM(object):
         y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
         self.action_scores = output[:, 0, :]
-        for i in range(1, tf.shape(output)[1].value):
+        for i in range(1, tf.shape(output)[1]):
             start = max(0, i - dwnd + 1)
             end = i + 1
             a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
