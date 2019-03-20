@@ -174,8 +174,10 @@ class Sender(object):
 
     def take_action(self, action):
         self.cwnd = self.cwnd * (1 + action)
-        self.cwnd = max(Sender.min_cwnd, self.cwnd)
-        self.cwnd = min(Sender.max_cwnd, self.cwnd)
+        if self.cwnd < Sender.min_cwnd:
+            self.cwnd = Sender.min_cwnd
+        if self.cwnd > Sender.max_cwnd:
+            self.cwnd = Sender.max_cwnd
 
     def window_is_open(self):
         return self.seq_num - self.next_ack < self.cwnd
