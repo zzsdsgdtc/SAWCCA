@@ -216,7 +216,7 @@ class Sender(object):
                      self.send_rate_ewma,
                      self.cwnd]
 
-            self.update_decision_window(state)
+            # self.update_decision_window(state)
 
             # time how long it takes to get an action from the NN
             if self.debug:
