@@ -419,7 +419,7 @@ class DaggerWorker(object):
         actions, self.lstm_state = self.sess.run(ops_to_run, feed_dict)
 
         # Choose an action to take and update current LSTM state
-        action = actions[0][-1]
+        action = actions[-1]
         self.prev_action = action
 
         return action
