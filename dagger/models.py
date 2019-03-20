@@ -60,19 +60,18 @@ class DaggerLSTM(object):
         v = tf.get_variable('attn_v', [self.attn_dim])
         y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
-        self.attn_vec = []
-        self.i = 0
-        def loop_body(dim):
-            start = max(0, self.i - dwnd + 1)
-            end = self.i + 1
+        l = tf.Varibale([])
+        def loop_body(i, dim, attn_vec):
+            start = tf.cond(i - dwnd + 1 < 0, lambda: 0, lambda: i - dwnd + 1)
+            end = i + 1
             a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
             s = tf.reduce_sum(a * output[:, start : end, :], [1])
  
-            self.attn_vec.append(s)
-            self.i = self.i + 1
-            return dim
+            l = tf.concat([l, [s]], 0)
+            return i + 1, dim, attn_vec
 
-        tf.while_loop(lambda dim : self.i < dim, loop_body, [tf.shape(output)[1]])
+        _, _, self.attn_vec = tf.while_loop(lambda i, dim, attn_vec: i < dim, 
+                                            loop_body, [0, tf.shape(output)[1], l])
             
         # self.action_scores is still batch_size * max_time * lstm_dim
         self.action_scores = tf.stack(self.attn_vec, 1)
