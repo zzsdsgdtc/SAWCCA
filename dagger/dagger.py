@@ -391,7 +391,7 @@ class DaggerWorker(object):
         """
         last_cwnd = state[self.state_dim - 1]
         expert_action = self.expert.policy(last_cwnd)
-
+        print('------------' + str(expert_action) + '----------------')
         # # For decision-making, normalize.
         # norm_state = normalize(state)
 
@@ -460,6 +460,10 @@ class DaggerWorker(object):
                     (self.task_idx, self.curr_ep, queue_size))
 
             # Enqueue a sequence of data into the training queue.
+            print('---------------' + str(len(state_buf)))
+            print('---------------' + str(len(state_buf[0])))
+            print('---------------' + str(len(action_buf)))
+            print('---------------' + str(len(action_buf[0])))
             self.sess.run(self.enqueue_train_op, feed_dict={
                 self.state_data: self.state_buf,
                 self.action_data: self.action_buf})
