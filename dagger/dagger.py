@@ -420,6 +420,7 @@ class DaggerWorker(object):
 
         # Choose an action to take and update current LSTM state
         action = actions[-1]
+        print("actions shape:" + str(actions.shape))
         print("in policy(): action is: " + str(action))
         self.prev_action = action
 
