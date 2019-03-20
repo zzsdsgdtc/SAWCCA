@@ -461,7 +461,7 @@ class DaggerWorker(object):
 
             # Enqueue a sequence of data into the training queue.
             print('---------------len state buf' + str(len(self.state_buf)))
-            print('---------------len state buf 0' + str(len((self.state_buf)[0])))
+            print('---------------state buf 0' + str((self.state_buf)[0])
             print('---------------len action buf' + str(len(self.action_buf)))
             # print('---------------' + str(len(self.action_buf[0])))
             self.sess.run(self.enqueue_train_op, feed_dict={
