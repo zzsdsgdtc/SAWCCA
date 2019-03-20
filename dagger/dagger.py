@@ -195,7 +195,7 @@ class DaggerLeader(object):
         start_ts = curr_ts_ms()
         ret = self.sess.run(ops_to_run, feed_dict={
             pi.input: batch_states,
-            self.actions: batch_actions,
+            self.expert_actions: batch_actions,
             pi.state_in: self.init_state})
 
         elapsed = (curr_ts_ms() - start_ts) / 1000.0
