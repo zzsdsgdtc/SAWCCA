@@ -389,6 +389,7 @@ class DaggerWorker(object):
         Appends to the state/action buffers the state and the
         "correct" action to take according to the expert.
         """
+        print("-----------in policy(), state is :" + str(state) + "--------------")
         last_cwnd = state[self.state_dim - 1]
         expert_action = self.expert.policy(last_cwnd)
         # print('------------' + str(expert_action) + '----------------')
