@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/ubuntu/anaconda2/bin/python2
 
 # Copyright 2018 Francis Y. Yan, Jestin Ma
 #
