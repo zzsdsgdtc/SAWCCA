@@ -396,7 +396,8 @@ class DaggerWorker(object):
         # norm_state = normalize(state)
 
         # one_hot_action = one_hot(self.prev_action, self.action_cnt)
-        aug_state = state.append(self.prev_action)
+        act = self.prev_action
+        aug_state = state.append(act)
         print("-----------in policy(), aug state is :" + str(aug_state) + "--------------")
         self.env.sender.update_decision_window(aug_state)
 
