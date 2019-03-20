@@ -60,7 +60,7 @@ class DaggerLSTM(object):
         v = tf.get_variable('attn_v', [self.attn_dim])
         y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
-        l = tf.Varibale([])
+        l = tf.Variable([])
         def loop_body(i, dim, attn_vec):
             start = tf.cond(i - dwnd + 1 < 0, lambda: 0, lambda: i - dwnd + 1)
             end = i + 1
