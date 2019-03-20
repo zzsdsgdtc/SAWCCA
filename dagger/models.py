@@ -64,7 +64,7 @@ class DaggerLSTM(object):
 
         def loop_body(i, dim):
             start = i - dwnd + 1
-            if start < 0:
+            if tf.less(start, 0):
                 start = 0
             end = i + 1
             a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
