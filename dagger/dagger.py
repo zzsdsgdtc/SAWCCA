@@ -185,7 +185,7 @@ class DaggerLeader(object):
 
         summary = True if self.train_step % 10 == 0 else False
 
-        ops_to_run = [self.train_op, self.total_loss]
+        ops_to_run = [self.x:, self.total_loss]
 
         if summary:
             ops_to_run.append(self.summary_op)
@@ -396,7 +396,7 @@ class DaggerWorker(object):
         # norm_state = normalize(state)
 
         # one_hot_action = one_hot(self.prev_action, self.action_cnt)
-        aug_state = norm_state + self.prev_action
+        aug_state = state.append(self.prev_action)
         self.env.sender.update_decision_window(aug_state)
 
         # Fill in state_buf, action_buf
