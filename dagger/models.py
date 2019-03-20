@@ -71,7 +71,8 @@ class DaggerLSTM(object):
             return i + 1, dim, attn_vec
 
         _, _, self.attn_vec = tf.while_loop(lambda i, dim, attn_vec: i < dim, 
-                                            loop_body, [0, tf.shape(output)[1], l])
+                                            loop_body, [0, tf.shape(output)[1], l],
+                                            shape_invariants=[i.get_shape(), tf.TensorShape([None])])
             
         # self.action_scores is still batch_size * max_time * lstm_dim
         self.action_scores = tf.stack(self.attn_vec, 1)
