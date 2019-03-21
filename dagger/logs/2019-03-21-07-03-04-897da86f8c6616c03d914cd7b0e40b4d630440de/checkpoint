@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/ubuntu/indigo_plusplus/dagger/logs/2019-03-21-07-03-04-897da86f8c6616c03d914cd7b0e40b4d630440de/checkpoint-40"
+all_model_checkpoint_paths: "/home/ubuntu/indigo_plusplus/dagger/logs/2019-03-21-07-03-04-897da86f8c6616c03d914cd7b0e40b4d630440de/checkpoint-40"
