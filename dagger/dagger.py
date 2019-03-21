@@ -254,11 +254,11 @@ class DaggerLeader(object):
             else:
                 iters_since_min_loss += 1
 
-            if curr_iter > 50:
+            if curr_iter > 500:
                 break
 
-            if iters_since_min_loss >= max(0.2 * curr_iter, 10):
-                break
+            # if iters_since_min_loss >= max(0.2 * curr_iter, 10):
+            #     break
 
         self.sess.run(self.global_network.add_one)
 
