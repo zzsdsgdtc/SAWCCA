@@ -191,6 +191,7 @@ class DaggerLeader(object):
             ops_to_run.append(self.summary_op)
 
         pi = self.global_network
+        ops_to_run += [pi.y, pi.attn_output]
 
         start_ts = curr_ts_ms()
         ret = self.sess.run(ops_to_run, feed_dict={
@@ -198,6 +199,9 @@ class DaggerLeader(object):
             self.expert_actions: batch_actions,
             pi.state_in: self.init_state})
 
+        y = ret[2]
+        attn = ret[3]
+        print("in traning:---------- y shape: " + str(y.shape) + "\n attn shape: " + str(attn.shape))
         elapsed = (curr_ts_ms() - start_ts) / 1000.0
         sys.stderr.write('train step %d: time %.2f\n' %
                          (self.train_step, elapsed))
