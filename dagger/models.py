@@ -79,7 +79,7 @@ class DaggerLSTM(object):
         # self.action_scores = tf.stack(self.attn_vec, 1)
         self.attn_output = self.attn_output.stack()
         self.actions = tf.nn.tanh(layers.linear(self.attn_output, 1))
-        # self.actions = tf.transpose(tf.squeeze(self.attn_output))  # batch_size * max_time
+        self.actions = tf.squeeze(self.attn_output)  # batch_size * max_time
 
         self.trainable_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
