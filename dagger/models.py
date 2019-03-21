@@ -81,6 +81,7 @@ class DaggerLSTM(object):
         self.actions = tf.nn.tanh(layers.linear(self.attn_output, 1))
         self.actions = tf.transpose(tf.squeeze(self.attn_output))  # batch_size * max_time
 
+
         self.trainable_vars = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
