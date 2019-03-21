@@ -419,7 +419,10 @@ class DaggerWorker(object):
         actions, self.lstm_state = self.sess.run(ops_to_run, feed_dict)
 
         # Choose an action to take and update current LSTM state
-        action = actions[-1]
+        if len(self.env.sender.decision_window) <= 1:
+            action = actions
+        else:
+            action = actions[-1]
         # print("actions shape:" + str(actions.shape))
         # print("in policy(): action is: " + str(action))
         self.prev_action = action
