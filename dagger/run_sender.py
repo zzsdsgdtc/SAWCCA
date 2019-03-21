@@ -47,7 +47,7 @@ class Learner(object):
         uninit_vars -= set(self.model.trainable_vars)
         self.sess.run(tf.variables_initializer(uninit_vars))
 
-def policy(self, state):
+    def policy(self, state):
         """ Given a state buffer in the past step, returns an action
         to perform.
 
