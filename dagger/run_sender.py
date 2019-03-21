@@ -26,14 +26,13 @@ from helpers.helpers import normalize, one_hot, softmax
 
 
 class Learner(object):
-    def __init__(self, state_dim, action_cnt, restore_vars):
-        self.aug_state_dim = state_dim + action_cnt
-        self.action_cnt = action_cnt
-        self.prev_action = action_cnt - 1
-
+    def __init__(self, sender, state_dim, restore_vars):
+        self.aug_state_dim = state_dim + 1#action_cnt
+        self.prev_action = 0
+        self.sender = sender
         with tf.variable_scope('global'):
             self.model = DaggerLSTM(
-                state_dim=self.aug_state_dim, action_cnt=action_cnt)
+                state_dim=self.aug_state_dim, dwnd=Sender.dwnd)
 
         self.lstm_state = self.model.zero_init_state(1)
 
@@ -48,29 +47,35 @@ class Learner(object):
         uninit_vars -= set(self.model.trainable_vars)
         self.sess.run(tf.variables_initializer(uninit_vars))
 
-    def policy(self, state):
-        norm_state = normalize(state)
+def policy(self, state):
+        """ Given a state buffer in the past step, returns an action
+        to perform.
 
-        one_hot_action = one_hot(self.prev_action, self.action_cnt)
-        aug_state = norm_state + one_hot_action
+        Appends to the state/action buffers the state and the
+        "correct" action to take according to the expert.
+        """
+
+        aug_state = state + [self.prev_action]
+        self.sender.update_decision_window(aug_state)
 
         # Get probability of each action from the local network.
         pi = self.model
         feed_dict = {
-            pi.input: [[aug_state]],
+            pi.input: [self.sender.decision_window],
             pi.state_in: self.lstm_state,
         }
-        ops_to_run = [pi.action_probs, pi.state_out]
-        action_probs, self.lstm_state = self.sess.run(ops_to_run, feed_dict)
+        ops_to_run = [pi.actions, pi.state_out]
+        actions, self.lstm_state = self.sess.run(ops_to_run, feed_dict)
 
-        # Choose an action to take
-        action = np.argmax(action_probs[0][0])
+        # Choose an action to take and update current LSTM state
+        if len(self.sender.decision_window) <= 1:
+            action = actions
+        else:
+            action = actions[-1]
+        # print("actions shape:" + str(actions.shape))
+        # print("in policy(): action is: " + str(action))
         self.prev_action = action
 
-        # action = np.argmax(np.random.multinomial(1, action_probs[0] - 1e-5))
-        # temperature = 1.0
-        # temp_probs = softmax(action_probs[0] / temperature)
-        # action = np.argmax(np.random.multinomial(1, temp_probs - 1e-5))
         return action
 
 
@@ -84,9 +89,8 @@ def main():
 
     model_path = path.join(project_root.DIR, 'dagger', 'model', 'model')
 
-    learner = Learner(
+    learner = Learner(sender=sender,
         state_dim=Sender.state_dim,
-        action_cnt=Sender.action_cnt,
         restore_vars=model_path)
 
     sender.set_policy(learner.policy)
