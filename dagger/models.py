@@ -58,7 +58,7 @@ class DaggerLSTM(object):
         u = tf.nn.tanh(u) # batch_size * max_time * attn_dim
 
         v = tf.get_variable('attn_v', [self.attn_dim])
-        v = tf.expand_dims(tf.expand_dims(v, 1), 1)
+        v = tf.expand_dims(tf.expand_dims(v, 0), 0)
         self.y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
         attn_vec = tf.TensorArray(dtype=tf.float32, size=1, dynamic_size=True)
