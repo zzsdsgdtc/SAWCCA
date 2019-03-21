@@ -122,8 +122,13 @@ def run(args):
     task_index = args.task_index
     sys.stderr.write('Starting job %s task %d\n' % (job_name, task_index))
 
-    ps_hosts = args.ps_hosts.split(',')
-    worker_hosts = args.worker_hosts.split(',')
+    with open(args.ps_hosts_file) as pf:
+        ps_hosts = pf.read().splitlines()
+    with open(args.worker_hosts_file) as wf:
+        worker_hosts = wf.read().splitlines()
+
+    # ps_hosts = args.ps_hosts.split(',')
+    # worker_hosts = args.worker_hosts.split(',')
     num_workers = len(worker_hosts)
 
     cluster = tf.train.ClusterSpec({'ps': ps_hosts, 'worker': worker_hosts})
@@ -155,10 +160,10 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--ps-hosts', required=True, metavar='[HOSTNAME:PORT, ...]',
+        '--ps-hosts-file', required=True,
         help='comma-separated list of hostname:port of parameter servers')
     parser.add_argument(
-        '--worker-hosts', required=True, metavar='[HOSTNAME:PORT, ...]',
+        '--worker-hosts-file', required=True,
         help='comma-separated list of hostname:port of workers')
     parser.add_argument('--job-name', choices=['ps', 'worker'],
                         required=True, help='ps or worker')

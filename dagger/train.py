@@ -36,8 +36,8 @@ def run(args):
             ssh_cmd = ['ssh', '-i', args['pem_dir'], host_list[i]]
 
             cmd = [args['worker_src'],
-                   '--ps-hosts', args['ps_hosts'],
-                   '--worker-hosts', args['worker_hosts'],
+                   '--ps-hosts-file', args['ps_hosts_file'],
+                   '--worker-hosts-file', args['worker_hosts_file'],
                    '--job-name', job_name,
                    '--task-index', str(i)]
 
@@ -77,13 +77,14 @@ def construct_args(prog_args):
     # file paths
     args['rlcc_dir'] = prog_args.rlcc_dir
     args['worker_src'] = path.join(args['rlcc_dir'], 'dagger', 'worker.py')
+    args['ps_hosts_file'] = path.join(args['rlcc_dir'], 'dagger', prog_args.ps_hosts_file)
+    args['worker_hosts_file'] = path.join(args['rlcc_dir'], 'dagger', prog_args.worker_hosts_file)
 
     # hostnames and processes
-    args['ps_hosts'] = prog_args.ps_hosts
-    args['worker_hosts'] = prog_args.worker_hosts
-
-    args['ps_list'] = prog_args.ps_hosts.split(',')
-    args['worker_list'] = prog_args.worker_hosts.split(',')
+    with open(prog_args.ps_hosts_file) as pf:
+        args['ps_list'] = pf.read().splitlines()
+    with open(prog_args.worker_hosts_file) as wf:
+        args['worker_list'] = wf.read().splitlines()
     args['username'] = prog_args.username
     args['pem_dir'] = prog_args.pem_dir
 
@@ -102,10 +103,10 @@ def construct_args(prog_args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--ps-hosts', required=True, metavar='[HOSTNAME:PORT, ...]',
+        '--ps-hosts-file', required=True,
         help='comma-separated list of hostname:port of parameter servers')
     parser.add_argument(
-        '--worker-hosts', required=True, metavar='[HOSTNAME:PORT, ...]',
+        '--worker-hosts-file', required=True,
         help='comma-separated list of hostname:port of workers')
     parser.add_argument(
         '--username', default='ubuntu',
