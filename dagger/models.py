@@ -58,7 +58,8 @@ class DaggerLSTM(object):
         u = tf.nn.tanh(u) # batch_size * max_time * attn_dim
 
         v = tf.get_variable('attn_v', [self.attn_dim])
-        y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
+        v = tf.expand_dims(tf.expand_dims(v, 1), 1)
+        self.y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
         attn_vec = tf.TensorArray(dtype=tf.float32, size=1, dynamic_size=True)
         i = tf.constant(0)
@@ -66,7 +67,7 @@ class DaggerLSTM(object):
         def loop_body(i, dim, attn_vec):
             start = tf.cond(i - dwnd + 1 < 0, lambda: 0, lambda: i - dwnd + 1)
             end = i + 1
-            a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
+            a = tf.expand_dims(tf.nn.softmax(self.y[:, start : end]), 2)
             s = tf.reduce_sum(a * output[:, start : end, :], [1])
  
             attn_vec = attn_vec.write(i, s)
