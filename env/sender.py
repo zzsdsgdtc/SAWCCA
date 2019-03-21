@@ -23,7 +23,7 @@ import numpy as np
 import datagram_pb2
 import project_root
 from helpers.helpers import (
-    curr_ts_ms, apply_op,
+    curr_ts_ms,
     READ_FLAGS, ERR_FLAGS, READ_ERR_FLAGS, WRITE_FLAGS, ALL_FLAGS)
 
 
