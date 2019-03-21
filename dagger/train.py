@@ -35,7 +35,7 @@ def run(args):
         for i in xrange(len(host_list)):
             ssh_cmd = ['ssh', '-i', args['pem_dir'], host_list[i]]
 
-            cmd = ['python', args['worker_src'],
+            cmd = [args['worker_src'],
                    '--ps-hosts', args['ps_hosts'],
                    '--worker-hosts', args['worker_hosts'],
                    '--job-name', job_name,
@@ -86,7 +86,7 @@ def construct_args(prog_args):
     args['worker_list'] = prog_args.worker_hosts.split(',')
     args['username'] = prog_args.username
     args['pem_dir'] = prog_args.pem_dir
-    
+
     for i, host in enumerate(args['ps_list']):
         args['ps_list'][i] = args['username'] + '@' + host.split(':')[0]
 
