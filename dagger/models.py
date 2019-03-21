@@ -59,7 +59,7 @@ class DaggerLSTM(object):
 
         v = tf.get_variable('attn_v', [self.attn_dim])
         v = tf.expand_dims(tf.expand_dims(v, 0), 0)
-        self.y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
+        y = tf.reduce_sum(v * u, [2]) # batch_size * max_time
 
         attn_vec = tf.TensorArray(dtype=tf.float32, size=1, dynamic_size=True)
         i = tf.constant(0)
@@ -67,7 +67,7 @@ class DaggerLSTM(object):
         def loop_body(i, dim, attn_vec):
             start = tf.cond(i - dwnd + 1 < 0, lambda: 0, lambda: i - dwnd + 1)
             end = i + 1
-            a = tf.expand_dims(tf.nn.softmax(self.y[:, start : end]), 2)
+            a = tf.expand_dims(tf.nn.softmax(y[:, start : end]), 2)
             s = tf.reduce_sum(a * output[:, start : end, :], [1])
  
             attn_vec = attn_vec.write(i, s)
@@ -80,7 +80,7 @@ class DaggerLSTM(object):
         # self.action_scores = tf.stack(self.attn_vec, 1)
         self.attn_output = self.attn_output.stack()
         self.actions = tf.nn.tanh(layers.linear(self.attn_output, 1))
-        self.actions = tf.transpose(tf.squeeze(self.attn_output))  # batch_size * max_time
+        self.actions = tf.transpose(tf.squeeze(self.actions))  # batch_size * max_time
 
 
         self.trainable_vars = tf.get_collection(
