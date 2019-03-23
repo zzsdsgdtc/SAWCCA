@@ -1,1 +1,1 @@
-# Indigo: Empirically learned congestion control
+# SAWCCA: Sliding Attention Window Congestion Control Agent
